@@ -1,0 +1,39 @@
+[
+  {
+    "id": "url-indexing",
+    "config": {
+      "steps/url-dispatcher.step.ts": {
+        "x": 234,
+        "y": 0
+      },
+      "steps/submit-urls.step.ts": {
+        "x": -88,
+        "y": 0
+      },
+      "steps/retry-handler.step.ts": {
+        "x": 869,
+        "y": 144
+      },
+      "steps/quota-reset-cron.step.ts": {
+        "x": 310,
+        "y": 342
+      },
+      "steps/indexnow-submitter.step.ts": {
+        "x": 1284,
+        "y": 39
+      },
+      "steps/google-indexer.step.ts": {
+        "x": 704,
+        "y": 604
+      },
+      "steps/get-status.step.ts": {
+        "x": -23,
+        "y": 159
+      },
+      "steps/get-history.step.ts": {
+        "x": 11,
+        "y": 378
+      }
+    }
+  }
+]

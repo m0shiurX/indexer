@@ -1,22 +1,25 @@
-import type { Handlers, StepConfig } from 'motia'
+import type { ApiRouteConfig, Handlers } from 'motia'
 import type { SubmissionState } from './config/types'
 import { STATE_SUBMISSIONS } from './config/constants'
 import { getQueryParams, jsonResponse } from './config/http-helpers'
 
-export const config = {
+export const config: ApiRouteConfig = {
+  type: 'api',
   name: 'GetHistory',
-  triggers: [{ type: 'http', method: 'GET', path: '/api/history' }],
+  method: 'GET',
+  path: '/api/history',
+  emits: [],
   flows: ['url-indexing'],
-} as const satisfies StepConfig
+}
 
-export const handler: Handlers<typeof config> = async (request, { state, logger }) => {
+export const handler: Handlers['GetHistory'] = async (request, { state, logger }) => {
   try {
     const query = getQueryParams(request)
     const limit = Math.min(Math.max(1, parseInt(query['limit'] ?? '50', 10) || 50), 200)
     const offset = Math.max(0, parseInt(query['offset'] ?? '0', 10) || 0)
     const statusFilter = query['status'] ?? null
 
-    let submissions = await state.list<SubmissionState>(STATE_SUBMISSIONS)
+    let submissions = await state.getGroup<SubmissionState>(STATE_SUBMISSIONS)
 
     if (statusFilter) {
       submissions = submissions.filter(

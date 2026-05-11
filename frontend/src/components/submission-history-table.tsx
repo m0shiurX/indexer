@@ -88,7 +88,7 @@ export default function SubmissionHistoryTable({
       <div className="flex items-center justify-between gap-4">
         <Select
           value={statusFilter || 'all'}
-          onValueChange={(v) => onStatusFilterChange(v === 'all' ? '' : v)}
+          onValueChange={(v) => onStatusFilterChange(v && v !== 'all' ? v : '')}
         >
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Filter status" />

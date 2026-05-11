@@ -45,7 +45,7 @@ export async function getNextAvailableKey(
     keysInitialized = true
   }
 
-  const entries: ApiKeyState[] = (await state.list(STATE_API_KEYS)) ?? []
+  const entries: ApiKeyState[] = (await state.getGroup(STATE_API_KEYS)) ?? []
   const available = entries.filter((e) => e.dailyUsed < e.dailyLimit)
 
   if (available.length === 0) return null

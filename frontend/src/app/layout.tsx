@@ -20,9 +20,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
             <Link href="/" className="flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold">
-                U
+                S
               </div>
-              <span className="text-sm font-semibold tracking-tight">URL Indexer</span>
+              <span className="text-sm font-semibold tracking-tight">Spaceworks</span>
             </Link>
             <nav className="flex items-center gap-1">
               <Link

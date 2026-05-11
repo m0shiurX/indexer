@@ -1,15 +1,21 @@
-import type { Handlers, StepConfig } from 'motia'
+import type { ApiRouteConfig, Handlers } from 'motia'
+import { z } from 'zod'
 import { TOPIC_URL_SUBMITTED } from './config/constants'
 import { getBody, jsonResponse } from './config/http-helpers'
 
-export const config = {
+export const config: ApiRouteConfig = {
+  type: 'api',
   name: 'SubmitUrls',
-  triggers: [{ type: 'http', method: 'POST', path: '/api/submit-urls' }],
-  enqueues: [TOPIC_URL_SUBMITTED],
+  method: 'POST',
+  path: '/api/submit-urls',
+  emits: [TOPIC_URL_SUBMITTED],
   flows: ['url-indexing'],
-} as const satisfies StepConfig
+  bodySchema: z.object({
+    urls: z.array(z.string()),
+  }),
+}
 
-export const handler: Handlers<typeof config> = async (request, { enqueue, logger }) => {
+export const handler: Handlers['SubmitUrls'] = async (request, { emit, logger }) => {
   const { urls } = getBody<{ urls: string[] }>(request)
 
   if (!urls || !Array.isArray(urls)) {
@@ -31,7 +37,7 @@ export const handler: Handlers<typeof config> = async (request, { enqueue, logge
     return jsonResponse(400, { error: 'No valid URLs provided' })
   }
 
-  await Promise.all(validUrls.map((url) => enqueue({ topic: TOPIC_URL_SUBMITTED, data: { url } })))
+  await Promise.all(validUrls.map((url) => emit({ topic: TOPIC_URL_SUBMITTED, data: { url } })))
 
   logger.info(`Submitted ${validUrls.length} URLs, rejected ${invalidUrls.length}`)
   return jsonResponse(200, { accepted: validUrls.length, rejected: invalidUrls.length })

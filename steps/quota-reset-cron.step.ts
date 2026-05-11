@@ -1,19 +1,20 @@
-import type { Handlers, StepConfig } from 'motia'
+import type { CronConfig, Handlers } from 'motia'
 import type { ApiKeyState } from './config/types'
 import { TOPIC_GOOGLE_INDEX, STATE_API_KEYS, STATE_PENDING_QUEUE } from './config/constants'
 
-export const config = {
+export const config: CronConfig = {
+  type: 'cron',
   name: 'QuotaResetCron',
   description: 'Daily midnight UTC quota reset + pending queue drain',
-  triggers: [{ type: 'cron', expression: '0 0 0 * * *' }],
-  enqueues: [TOPIC_GOOGLE_INDEX],
+  cron: '0 0 0 * * *',
+  emits: [TOPIC_GOOGLE_INDEX],
   flows: ['url-indexing'],
-} as const satisfies StepConfig
+}
 
-export const handler: Handlers<typeof config> = async (_input, { state, enqueue, logger }) => {
+export const handler: Handlers['QuotaResetCron'] = async ({ state, emit, logger }) => {
   const [keys, pendingUrls] = await Promise.all([
-    state.list<ApiKeyState>(STATE_API_KEYS),
-    state.list<{ url: string }>(STATE_PENDING_QUEUE),
+    state.getGroup<ApiKeyState>(STATE_API_KEYS),
+    state.getGroup<{ url: string }>(STATE_PENDING_QUEUE),
   ])
 
   // Reset all key quotas in parallel
@@ -26,7 +27,7 @@ export const handler: Handlers<typeof config> = async (_input, { state, enqueue,
   // Drain pending queue: re-enqueue and delete in parallel
   await Promise.all(
     pendingUrls.map(async (entry) => {
-      await enqueue({ topic: TOPIC_GOOGLE_INDEX, data: { url: entry.url } })
+      await emit({ topic: TOPIC_GOOGLE_INDEX, data: { url: entry.url } })
       await state.delete(STATE_PENDING_QUEUE, entry.url)
     })
   )

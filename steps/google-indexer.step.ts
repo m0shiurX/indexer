@@ -1,18 +1,24 @@
 import { google } from 'googleapis'
+import { z } from 'zod'
 import { getNextAvailableKey, incrementUsage } from './config/google-auth-manager'
 import { updateSubmission } from './config/submission-helpers'
-import { TOPIC_GOOGLE_INDEX, TOPIC_SUBMISSION_RETRY, TOPIC_SUBMISSION_COMPLETE, STATE_PENDING_QUEUE } from './config/constants'
-import type { Handlers, StepConfig } from 'motia'
+import { TOPIC_GOOGLE_INDEX, TOPIC_SUBMISSION_RETRY, STATE_PENDING_QUEUE } from './config/constants'
+import type { EventConfig, Handlers } from 'motia'
 
-export const config = {
+export const config: EventConfig = {
+  type: 'event',
   name: 'GoogleIndexer',
   description: 'Submits URL to Google Indexing API with key rotation',
-  triggers: [{ type: 'queue', topic: TOPIC_GOOGLE_INDEX }],
-  enqueues: [TOPIC_SUBMISSION_RETRY, TOPIC_SUBMISSION_COMPLETE],
+  subscribes: [TOPIC_GOOGLE_INDEX],
+  emits: [TOPIC_SUBMISSION_RETRY],
   flows: ['url-indexing'],
-} as const satisfies StepConfig
+  input: z.object({
+    url: z.string(),
+    retryCount: z.number().optional(),
+  }),
+}
 
-export const handler: Handlers<typeof config> = async (input, { state, enqueue, logger }) => {
+export const handler: Handlers['GoogleIndexer'] = async (input, { state, emit, logger }) => {
   const { url, retryCount = 0 } = input as { url: string; retryCount?: number }
 
   const keyResult = await getNextAvailableKey(state)
@@ -36,13 +42,12 @@ export const handler: Handlers<typeof config> = async (input, { state, enqueue, 
     await updateSubmission(state, url, { googleStatus: 'success', keyUsed: keyId, retryCount })
 
     logger.info(`Google indexing success for URL: ${url}, key: ${keyId}`)
-    await enqueue({ topic: TOPIC_SUBMISSION_COMPLETE, data: { url, service: 'google', keyUsed: keyId } })
   } catch (err: any) {
     const httpStatus: number = typeof err?.response?.status === 'number' ? err.response.status : 0
 
     if (httpStatus === 429 || httpStatus >= 500) {
       logger.warn(`Google transient error (${httpStatus}) for ${url}, retry #${retryCount + 1}`)
-      await enqueue({ topic: TOPIC_SUBMISSION_RETRY, data: { url, service: 'google', retryCount: retryCount + 1 } })
+      await emit({ topic: TOPIC_SUBMISSION_RETRY, data: { url, service: 'google', retryCount: retryCount + 1 } })
     } else {
       logger.error(`Google permanent error (${httpStatus}) for ${url} — ${err?.message}`)
       await updateSubmission(state, url, { googleStatus: 'failed', keyUsed: keyId, retryCount })

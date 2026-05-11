@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3111'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3110'
 
 export interface SubmitUrlsResult {
   accepted: number
